@@ -67,9 +67,14 @@ const shoppingList = (function(){
       event.preventDefault();
       const newItemName = $('.js-shopping-list-entry').val();
       $('.js-shopping-list-entry').val('');
-      store.addItem(newItemName);
-      render();
-    });
+      if(newItemName)
+        api.createItem(newItemName)
+          .then(res => res.json())
+          .then((newItem) => {
+            store.addItem(newItem);
+            render();
+         });
+      });
   }
   
   function getItemIdFromElement(item) {
@@ -81,8 +86,12 @@ const shoppingList = (function(){
   function handleItemCheckClicked() {
     $('.js-shopping-list').on('click', '.js-item-toggle', event => {
       const id = getItemIdFromElement(event.currentTarget);
-      store.findAndToggleChecked(id);
-      render();
+      const item = store.findById(id);
+      api.updateItem(id, {checked: !item.checked})
+        .then(res => res.json())
+        .then(() => {
+          store.findAndUpdate(id, {checked: !item.checked});
+        });
     });
   }
   
@@ -92,9 +101,12 @@ const shoppingList = (function(){
       // get the index of the item in store.items
       const id = getItemIdFromElement(event.currentTarget);
       // delete the item
-      store.findAndDelete(id);
-      // render the updated shopping list
-      render();
+      api.deleteItem(id)
+        .then(res => res.json())
+        .then(() => {
+          store.findAndDelete(id);
+          render();
+        })
     });
   }
   
@@ -103,9 +115,14 @@ const shoppingList = (function(){
       event.preventDefault();
       const id = getItemIdFromElement(event.currentTarget);
       const itemName = $(event.currentTarget).find('.shopping-item').val();
-      store.findAndUpdateName(id, itemName);
-      store.setItemIsEditing(id, false);
-      render();
+      api.updateItem(id, {name: itemName})
+      .then(res=> res.json())
+      .then(() => {
+        store.findAndUpdate(id, {name: itemName});
+        store.setItemIsEditing(id, false);
+        render();
+        return api.getItems();
+      });
     });
   }
   
